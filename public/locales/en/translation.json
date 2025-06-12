@@ -1,0 +1,34 @@
+{
+  "nav": {
+    "home": "Home",
+    "courses": "Courses",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Login",
+    "myCourses": "My Courses"
+  },
+  "home": {
+    "hero": {
+      "title": "Online Learning Platform for International Students",
+      "subtitle": "A customized online lecture platform for international students worldwide. Find the lectures you want or become an instructor to provide lectures.",
+      "findCourses": "Find Courses",
+      "becomeInstructor": "Become an Instructor"
+    },
+    "features": {
+      "title": "EZKorea Features",
+      "subtitle": "We provide better learning experiences",
+      "customLearning": {
+        "title": "Customized Learning",
+        "description": "Learn efficiently by selecting lectures that match your level and goals."
+      },
+      "expertLectures": {
+        "title": "Expert Lectures",
+        "description": "Take high-quality lectures provided by experts in each field."
+      },
+      "flexibleLearning": {
+        "title": "Flexible Learning",
+        "description": "Learn freely without being restricted by time and place."
+      }
+    }
+  }
+}

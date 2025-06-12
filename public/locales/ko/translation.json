@@ -1,0 +1,34 @@
+{
+  "nav": {
+    "home": "홈",
+    "courses": "강좌",
+    "about": "소개",
+    "contact": "문의하기",
+    "login": "로그인",
+    "myCourses": "내 강의실"
+  },
+  "home": {
+    "hero": {
+      "title": "유학생을 위한 온라인 학습 플랫폼",
+      "subtitle": "전 세계 유학생들을 위한 맞춤형 온라인 강의 플랫폼입니다. 원하는 강의를 찾아보거나, 직접 강사가 되어 강의를 제공해보세요.",
+      "findCourses": "강의 찾아보기",
+      "becomeInstructor": "강사 되기"
+    },
+    "features": {
+      "title": "EZKorea의 특징",
+      "subtitle": "더 나은 학습 경험을 제공합니다",
+      "customLearning": {
+        "title": "맞춤형 학습",
+        "description": "자신의 수준과 목표에 맞는 강의를 선택하여 효율적으로 학습할 수 있습니다."
+      },
+      "expertLectures": {
+        "title": "전문가 강의",
+        "description": "각 분야의 전문가들이 제공하는 퀄리티 높은 강의를 수강할 수 있습니다."
+      },
+      "flexibleLearning": {
+        "title": "유연한 학습",
+        "description": "시간과 장소에 구애받지 않고 자유롭게 학습할 수 있습니다."
+      }
+    }
+  }
+}
