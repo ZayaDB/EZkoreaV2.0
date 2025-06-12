@@ -7,16 +7,30 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ✅ CORS 설정: 로컬과 배포된 프론트엔드 허용
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://ezkoreav2-production.up.railway.app",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
+app.use(express.json());
+app.use("/uploads", express.static("uploads"));
+
 // ✅ MongoDB 연결
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB 연결 성공"))
   .catch((err) => {
     console.error("❌ MongoDB 연결 실패:", err.message);
-    process.exit(1);
   });
 
-// ✅ User 스키마 정의 (간단한 예시)
+// ✅ User 스키마 정의
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -25,10 +39,6 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model("User", userSchema);
-
-// ✅ 미들웨어
-app.use(cors());
-app.use(bodyParser.json());
 
 // ✅ 기본 라우트
 app.get("/", (req, res) => {
@@ -52,9 +62,10 @@ app.post("/api/signup", async (req, res) => {
     const user = new User({ email, password, name, bio });
     await user.save();
 
-    return res
-      .status(201)
-      .json({ message: "회원가입 완료", email: user.email });
+    return res.status(201).json({
+      message: "회원가입 완료",
+      user: { email: user.email, name: user.name, bio: user.bio },
+    });
   } catch (err) {
     console.error("❌ 회원가입 에러:", err);
     return res.status(500).json({ message: "서버 오류가 발생했습니다." });
@@ -63,5 +74,6 @@ app.post("/api/signup", async (req, res) => {
 
 // ✅ 서버 시작
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log("MongoDB URI:", process.env.MONGO_URI);
 });

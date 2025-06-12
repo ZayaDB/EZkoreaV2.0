@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
-import Image from "next/image";
 
 export default function SignUp() {
   const { t } = useTranslation();
@@ -27,11 +26,34 @@ export default function SignUp() {
     }
 
     try {
-      // API 호출 로직 추가 예정
-      console.log("Form submitted:", formData);
+      const res = await fetch(
+        "https://ezkoreav2-production.up.railway.app/api/signup",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            name: formData.name,
+            bio: formData.bio,
+          }),
+        }
+      );
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || "회원가입 실패");
+        return;
+      }
+
+      alert("회원가입이 완료되었습니다!");
+      // 필요하면 여기서 페이지 이동도 가능
+      // router.push('/login')
     } catch (err) {
-      setError("회원가입 중 오류가 발생했습니다.");
       console.error("Signup error:", err);
+      setError("서버 오류가 발생했습니다.");
     }
   };
 
