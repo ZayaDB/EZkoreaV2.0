@@ -7,6 +7,26 @@
     "login": "로그인",
     "myCourses": "내 강의실"
   },
+  "auth": {
+    "createAccount": "회원가입",
+    "alreadyHaveAccount": "이미 계정이 있으신가요?",
+    "login": "로그인",
+    "email": "이메일",
+    "password": "비밀번호",
+    "confirmPassword": "비밀번호 확인",
+    "name": "이름",
+    "bio": "자기소개",
+    "signUp": "가입하기",
+    "loginButton": "로그인",
+    "forgotPassword": "비밀번호를 잊으셨나요?"
+  },
+  "common": {
+    "optional": "선택사항",
+    "required": "필수사항",
+    "loading": "로딩중...",
+    "error": "오류가 발생했습니다",
+    "success": "성공!"
+  },
   "home": {
     "hero": {
       "title": "유학생을 위한 온라인 학습 플랫폼",

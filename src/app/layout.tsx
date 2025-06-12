@@ -1,12 +1,15 @@
-"use client";
-
 import "./globals.css";
 import { Inter } from "next/font/google";
-import { ThemeProvider } from "next-themes";
 import Header from "@/components/Header";
-import "../i18n";
+import type { Metadata } from "next";
+import Providers from "@/components/Providers";
 
 const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "EZKorea",
+  description: "Online Learning Platform for International Students",
+};
 
 export default function RootLayout({
   children,
@@ -16,17 +19,12 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className={`${inter.className} bg-background text-foreground`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <Providers>
           <div className="min-h-screen">
             <Header />
             <main className="container mx-auto px-4 py-8">{children}</main>
           </div>
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

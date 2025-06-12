@@ -7,6 +7,26 @@
     "login": "Login",
     "myCourses": "My Courses"
   },
+  "auth": {
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "name": "Name",
+    "bio": "Bio",
+    "signUp": "Sign Up",
+    "loginButton": "Login",
+    "forgotPassword": "Forgot your password?"
+  },
+  "common": {
+    "optional": "Optional",
+    "required": "Required",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success!"
+  },
   "home": {
     "hero": {
       "title": "Online Learning Platform for International Students",
