@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { API } from "@/config";
 
 interface DashboardStats {
   userCount: number;
@@ -29,7 +30,7 @@ export default function AdminDashboard() {
 
   const fetchStats = async (token: string) => {
     try {
-      const res = await fetch("/api/admin/dashboard", {
+      const res = await fetch(API.admin.dashboard, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -52,7 +53,10 @@ export default function AdminDashboard() {
     setError("");
 
     try {
-      const res = await fetch("/api/admin/login", {
+      console.log("👉 로그인 시도:", { email, password });
+      console.log("👉 API URL:", API.admin.login);
+
+      const res = await fetch(API.admin.login, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -60,7 +64,9 @@ export default function AdminDashboard() {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log("👉 응답 상태:", res.status);
       const data = await res.json();
+      console.log("👉 응답 데이터:", data);
 
       if (!res.ok) {
         throw new Error(data.message || "로그인에 실패했습니다.");
@@ -70,6 +76,7 @@ export default function AdminDashboard() {
       setIsLoggedIn(true);
       fetchStats(data.token);
     } catch (err: any) {
+      console.error("❌ 로그인 에러:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -96,7 +103,7 @@ export default function AdminDashboard() {
                   name="email"
                   type="email"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="이메일"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -111,7 +118,7 @@ export default function AdminDashboard() {
                   name="password"
                   type="password"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="비밀번호"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -127,7 +134,7 @@ export default function AdminDashboard() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 {loading ? "로그인 중..." : "로그인"}
               </button>

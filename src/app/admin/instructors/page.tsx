@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { API } from "@/config";
 
 interface InstructorApplication {
   _id: string;
@@ -33,7 +34,7 @@ export default function InstructorApproval() {
 
   const fetchApplications = async (token: string) => {
     try {
-      const res = await fetch("/api/admin/instructor-applications", {
+      const res = await fetch(API.admin.instructors.list, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -61,15 +62,12 @@ export default function InstructorApproval() {
       return;
     }
     try {
-      const res = await fetch(
-        `/api/admin/instructor-applications/${id}/approve`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(API.admin.instructors.approve(id), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           localStorage.removeItem("adminToken");
@@ -94,15 +92,12 @@ export default function InstructorApproval() {
       return;
     }
     try {
-      const res = await fetch(
-        `/api/admin/instructor-applications/${id}/reject`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(API.admin.instructors.reject(id), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           localStorage.removeItem("adminToken");

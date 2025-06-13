@@ -314,14 +314,17 @@ function adminAuthMiddleware(req, res, next) {
 
 // 관리자 로그인 API
 app.post("/api/admin/login", async (req, res) => {
+  console.log("👉 관리자 로그인 요청:", req.body);
   const { email, password } = req.body;
 
   if (email !== "admin@ezkorea.com") {
+    console.log("❌ 관리자 계정이 아님:", email);
     return res.status(401).json({ message: "관리자 계정이 아닙니다." });
   }
 
   // 고정된 관리자 비밀번호 확인
   if (password !== "supersecret123") {
+    console.log("❌ 비밀번호 불일치");
     return res.status(401).json({ message: "비밀번호가 일치하지 않습니다." });
   }
 
@@ -336,6 +339,7 @@ app.post("/api/admin/login", async (req, res) => {
     { expiresIn: "24h" }
   );
 
+  console.log("✅ 관리자 로그인 성공");
   return res.status(200).json({
     message: "관리자 로그인 성공",
     token,

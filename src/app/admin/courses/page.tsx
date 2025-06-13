@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { API } from "@/config";
 
 interface Course {
   _id: string;
@@ -32,7 +33,7 @@ export default function CourseApproval() {
 
   const fetchCourses = async (token: string) => {
     try {
-      const res = await fetch("/api/admin/courses", {
+      const res = await fetch(API.admin.courses.list, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -60,7 +61,7 @@ export default function CourseApproval() {
       return;
     }
     try {
-      const res = await fetch(`/api/admin/courses/${id}/approve`, {
+      const res = await fetch(API.admin.courses.approve(id), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -90,7 +91,7 @@ export default function CourseApproval() {
       return;
     }
     try {
-      const res = await fetch(`/api/admin/courses/${id}/reject`, {
+      const res = await fetch(API.admin.courses.reject(id), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
