@@ -11,6 +11,7 @@ interface User {
   name: string;
   email: string;
   role: string;
+  activeRole?: string;
   bio?: string;
 }
 
@@ -28,7 +29,7 @@ export default function ProfilePage() {
     }
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
-    setActiveRole(parsedUser.role || "student");
+    setActiveRole(parsedUser.activeRole || parsedUser.role || "student");
   }, [router]);
 
   const handleRoleSwitch = async (newRole: string) => {
@@ -49,7 +50,7 @@ export default function ProfilePage() {
         throw new Error("역할 전환에 실패했습니다.");
       }
 
-      const updatedUser = { ...user, role: newRole };
+      const updatedUser = { ...user, activeRole: newRole };
       localStorage.setItem("user", JSON.stringify(updatedUser));
       setUser(updatedUser);
       setActiveRole(newRole);
@@ -88,36 +89,33 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* 역할 전환 섹션 */}
-        {user.role === "instructor" && (
+        {/* 역할 전환 섹션 - 승인된 강사이고 현재 학생 모드일 때만 표시 */}
+        {user.role === "instructor" && activeRole === "student" && (
           <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <h2 className="text-lg font-semibold mb-3">역할 전환</h2>
-            <div className="flex gap-4">
-              <button
-                onClick={() => handleRoleSwitch("student")}
-                className={`px-4 py-2 rounded-md ${
-                  activeRole === "student"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-600"
-                }`}
-              >
-                학생 모드
-              </button>
-              <button
-                onClick={() => handleRoleSwitch("instructor")}
-                className={`px-4 py-2 rounded-md ${
-                  activeRole === "instructor"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-600"
-                }`}
-              >
-                강사 모드
-              </button>
-            </div>
+            <h2 className="text-lg font-semibold mb-3">강사 모드로 전환</h2>
+            <button
+              onClick={() => handleRoleSwitch("instructor")}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              강사 모드로 전환하기
+            </button>
           </div>
         )}
 
-        {/* 강사 신청 버튼 - 일반 학생이고 아직 신청하지 않은 경우에만 표시 */}
+        {/* 학생 모드로 전환 - 승인된 강사이고 현재 강사 모드일 때만 표시 */}
+        {user.role === "instructor" && activeRole === "instructor" && (
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <h2 className="text-lg font-semibold mb-3">학생 모드로 전환</h2>
+            <button
+              onClick={() => handleRoleSwitch("student")}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              학생 모드로 전환하기
+            </button>
+          </div>
+        )}
+
+        {/* 강사 신청 버튼 - 순수 학생인 경우에만 표시 */}
         {user.role === "student" && (
           <div className="mt-4">
             <Link

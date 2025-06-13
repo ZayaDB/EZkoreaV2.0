@@ -8,15 +8,26 @@ import {
   Bars3Icon,
   XMarkIcon,
   UserCircleIcon,
+  AcademicCapIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 import ThemeToggle from "./ThemeToggle";
+import { API } from "@/config";
+
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  activeRole?: string;
+}
 
 export default function Header() {
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +71,34 @@ export default function Header() {
     setIsLoggedIn(false);
     setUser(null);
     window.location.href = "/";
+  };
+
+  const handleRoleSwitch = async (newRole: string) => {
+    if (!user) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API.users.switchRole}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      if (!res.ok) {
+        throw new Error("역할 전환에 실패했습니다.");
+      }
+
+      const updatedUser = { ...user, activeRole: newRole };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      setDropdownOpen(false);
+    } catch (error) {
+      console.error("역할 전환 실패:", error);
+      alert("역할 전환에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   if (!mounted) {
@@ -121,7 +160,8 @@ export default function Header() {
           <div className="flex items-center gap-x-4">
             <ThemeToggle />
             <LanguageSwitcher />
-            {isLoggedIn && (
+            {/* 강사 되기 버튼은 일반 학생에게만 표시 */}
+            {isLoggedIn && user?.role === "student" && (
               <Link href="/become-instructor" className="btn-secondary">
                 {t("nav.becomeInstructor")}
               </Link>
@@ -147,6 +187,25 @@ export default function Header() {
                     >
                       {t("profile.profile")}
                     </Link>
+                    {/* 승인된 강사인 경우 역할 전환 메뉴 표시 */}
+                    {user?.role === "instructor" && (
+                      <>
+                        <button
+                          onClick={() => handleRoleSwitch("student")}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <UserIcon className="h-4 w-4 mr-2" />
+                          학생 모드로 전환
+                        </button>
+                        <button
+                          onClick={() => handleRoleSwitch("instructor")}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <AcademicCapIcon className="h-4 w-4 mr-2" />
+                          강사 모드로 전환
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => {
                         handleLogout();
@@ -195,6 +254,16 @@ export default function Header() {
             >
               {t("nav.contact")}
             </Link>
+            {/* 모바일에서 강사 되기 버튼 */}
+            {isLoggedIn && user?.role === "student" && (
+              <Link
+                href="/become-instructor"
+                className="block py-2 text-base font-semibold text-primary hover:text-primary-dark transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t("nav.becomeInstructor")}
+              </Link>
+            )}
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
@@ -207,6 +276,31 @@ export default function Header() {
                 >
                   {t("profile.profile")}
                 </Link>
+                {/* 모바일에서 역할 전환 메뉴 */}
+                {user?.role === "instructor" && (
+                  <>
+                    <button
+                      onClick={() => {
+                        handleRoleSwitch("student");
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center w-full py-2 text-base font-semibold hover:text-primary transition-colors"
+                    >
+                      <UserIcon className="h-5 w-5 mr-2" />
+                      학생 모드로 전환
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleRoleSwitch("instructor");
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center w-full py-2 text-base font-semibold hover:text-primary transition-colors"
+                    >
+                      <AcademicCapIcon className="h-5 w-5 mr-2" />
+                      강사 모드로 전환
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => {
                     handleLogout();
