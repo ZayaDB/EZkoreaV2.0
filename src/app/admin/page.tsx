@@ -3,114 +3,203 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface DashboardStats {
-  totalUsers: number;
-  totalInstructors: number;
-  totalCourses: number;
-  pendingInstructorApplications: number;
-  pendingCourseApplications: number;
+  userCount: number;
+  instructorCount: number;
+  pendingInstructorCount: number;
+  courseCount: number;
+  pendingCourseCount: number;
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 0,
-    totalInstructors: 0,
-    totalCourses: 0,
-    pendingInstructorApplications: 0,
-    pendingCourseApplications: 0,
-  });
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    fetch("https://ezkoreav20-production.up.railway.app/api/admin/dashboard", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setStats(data))
-      .catch(() => setError("데이터를 불러오는데 실패했습니다."));
+    // 로컬 스토리지에서 토큰 확인
+    const token = localStorage.getItem("adminToken");
+    if (token) {
+      setIsLoggedIn(true);
+      fetchStats(token);
+    }
   }, []);
 
-  if (error) return <div>{error}</div>;
+  const fetchStats = async (token: string) => {
+    try {
+      const res = await fetch("/api/admin/dashboard", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("통계 데이터를 불러오는데 실패했습니다.");
+      const data = await res.json();
+      setStats(data);
+    } catch (err: any) {
+      setError(err.message);
+      if (err.message.includes("인증")) {
+        setIsLoggedIn(false);
+        localStorage.removeItem("adminToken");
+      }
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "로그인에 실패했습니다.");
+      }
+
+      localStorage.setItem("adminToken", data.token);
+      setIsLoggedIn(true);
+      fetchStats(data.token);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+              관리자 로그인
+            </h2>
+          </div>
+          <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+            <div className="rounded-md shadow-sm -space-y-px">
+              <div>
+                <label htmlFor="email" className="sr-only">
+                  이메일
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="이메일"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="sr-only">
+                  비밀번호
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="비밀번호"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-red-500 text-sm text-center">{error}</div>
+            )}
+
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                {loading ? "로그인 중..." : "로그인"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!stats) return <div>로딩 중...</div>;
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">관리자 대시보드</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">관리자 대시보드</h1>
+        <button
+          onClick={() => {
+            localStorage.removeItem("adminToken");
+            setIsLoggedIn(false);
+          }}
+          className="text-sm text-red-500 hover:text-red-700"
+        >
+          로그아웃
+        </button>
+      </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">전체 회원</h3>
-          <p className="text-3xl font-bold">{stats.totalUsers}명</p>
+          <p className="text-3xl font-bold">{stats.userCount}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold mb-2">전체 강사</h3>
-          <p className="text-3xl font-bold">{stats.totalInstructors}명</p>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-2">승인된 강사</h3>
+          <p className="text-3xl font-bold">{stats.instructorCount}</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">전체 강의</h3>
-          <p className="text-3xl font-bold">{stats.totalCourses}개</p>
+          <p className="text-3xl font-bold">{stats.courseCount}</p>
         </div>
       </div>
 
-      {/* 승인 대기 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Link
-          href="/admin/instructors"
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-        >
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">강사 승인 대기</h3>
-              <p className="text-3xl font-bold">
-                {stats.pendingInstructorApplications}건
-              </p>
-            </div>
-            <span className="text-blue-500">→</span>
+      {/* 승인 대기 섹션 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">대기 중인 강사 신청</h3>
+            <span className="text-2xl font-bold text-blue-500">
+              {stats.pendingInstructorCount}
+            </span>
           </div>
-        </Link>
-        <Link
-          href="/admin/courses"
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-        >
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">강의 승인 대기</h3>
-              <p className="text-3xl font-bold">
-                {stats.pendingCourseApplications}건
-              </p>
-            </div>
-            <span className="text-blue-500">→</span>
-          </div>
-        </Link>
-      </div>
-
-      {/* 빠른 링크 */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold mb-4">빠른 링크</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link
-            href="/admin/users"
-            className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
-          >
-            회원 관리
-          </Link>
           <Link
             href="/admin/instructors"
-            className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+            className="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
           >
-            강사 관리
+            강사 승인 관리
           </Link>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">대기 중인 강의</h3>
+            <span className="text-2xl font-bold text-blue-500">
+              {stats.pendingCourseCount}
+            </span>
+          </div>
           <Link
             href="/admin/courses"
-            className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+            className="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
           >
-            강의 관리
-          </Link>
-          <Link
-            href="/admin/settings"
-            className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
-          >
-            사이트 설정
+            강의 승인 관리
           </Link>
         </div>
       </div>

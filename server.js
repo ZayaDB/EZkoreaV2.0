@@ -448,3 +448,209 @@ app.post("/api/admin/courses/:id/reject", async (req, res) => {
     res.status(500).json({ message: "서버 오류" });
   }
 });
+
+// 관리자 인증 미들웨어
+function adminAuthMiddleware(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "인증이 필요합니다." });
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "your_super_secret_key"
+    );
+    // 관리자 이메일 확인
+    if (decoded.email !== "admin@ezkorea.com") {
+      return res.status(403).json({ message: "관리자 권한이 필요합니다." });
+    }
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "유효하지 않은 토큰입니다." });
+  }
+}
+
+// 관리자 로그인 API
+app.post("/api/admin/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (email !== "admin@ezkorea.com") {
+    return res.status(401).json({ message: "관리자 계정이 아닙니다." });
+  }
+
+  // 고정된 관리자 비밀번호 확인
+  if (password !== "supersecret123") {
+    return res.status(401).json({ message: "비밀번호가 일치하지 않습니다." });
+  }
+
+  // JWT 토큰 생성
+  const token = jwt.sign(
+    {
+      email: "admin@ezkorea.com",
+      name: "관리자",
+      isAdmin: true,
+    },
+    process.env.JWT_SECRET || "your_super_secret_key",
+    { expiresIn: "24h" }
+  );
+
+  return res.status(200).json({
+    message: "관리자 로그인 성공",
+    token,
+    user: {
+      email: "admin@ezkorea.com",
+      name: "관리자",
+      isAdmin: true,
+    },
+  });
+});
+
+// 기존 관리자 API에 미들웨어 적용
+app.get("/api/admin/dashboard", adminAuthMiddleware, async (req, res) => {
+  try {
+    const userCount = await User.countDocuments();
+    const instructorCount = await User.countDocuments({ role: "instructor" });
+    const pendingInstructorCount = await InstructorApplication.countDocuments({
+      status: "pending",
+    });
+    const courseCount = await Course.countDocuments();
+    const pendingCourseCount = await Course.countDocuments({
+      status: "pending",
+    });
+
+    res.json({
+      userCount,
+      instructorCount,
+      pendingInstructorCount,
+      courseCount,
+      pendingCourseCount,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+app.get(
+  "/api/admin/instructor-applications",
+  adminAuthMiddleware,
+  async (req, res) => {
+    try {
+      const applications = await InstructorApplication.find({
+        status: "pending",
+      }).populate("userId", "email name");
+      res.json(applications);
+    } catch (err) {
+      res.status(500).json({ message: "서버 오류" });
+    }
+  }
+);
+
+app.post(
+  "/api/admin/instructor-applications/:id/approve",
+  adminAuthMiddleware,
+  async (req, res) => {
+    try {
+      const application = await InstructorApplication.findByIdAndUpdate(
+        req.params.id,
+        { status: "approved" },
+        { new: true }
+      );
+      if (!application)
+        return res.status(404).json({ message: "신청 내역 없음" });
+
+      // 유저 role도 instructor로 변경
+      await User.findByIdAndUpdate(application.userId, { role: "instructor" });
+
+      res.json({ message: "승인 완료", application });
+    } catch (err) {
+      res.status(500).json({ message: "서버 오류" });
+    }
+  }
+);
+
+app.post(
+  "/api/admin/instructor-applications/:id/reject",
+  adminAuthMiddleware,
+  async (req, res) => {
+    try {
+      const application = await InstructorApplication.findByIdAndUpdate(
+        req.params.id,
+        { status: "rejected" },
+        { new: true }
+      );
+      if (!application)
+        return res.status(404).json({ message: "신청 내역 없음" });
+      res.json({ message: "거절 완료", application });
+    } catch (err) {
+      res.status(500).json({ message: "서버 오류" });
+    }
+  }
+);
+
+app.get("/api/admin/users", adminAuthMiddleware, async (req, res) => {
+  try {
+    const users = await User.find({}, "-password");
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+app.get("/api/admin/instructors", adminAuthMiddleware, async (req, res) => {
+  try {
+    const instructors = await User.find({ role: "instructor" }, "-password");
+    res.json(instructors);
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+app.get("/api/admin/courses", adminAuthMiddleware, async (req, res) => {
+  try {
+    const courses = await Course.find({ status: "pending" }).populate(
+      "instructorId",
+      "email name"
+    );
+    res.json(courses);
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+app.post(
+  "/api/admin/courses/:id/approve",
+  adminAuthMiddleware,
+  async (req, res) => {
+    try {
+      const course = await Course.findByIdAndUpdate(
+        req.params.id,
+        { status: "approved" },
+        { new: true }
+      );
+      if (!course) return res.status(404).json({ message: "강의 내역 없음" });
+      res.json({ message: "강의 승인 완료", course });
+    } catch (err) {
+      res.status(500).json({ message: "서버 오류" });
+    }
+  }
+);
+
+app.post(
+  "/api/admin/courses/:id/reject",
+  adminAuthMiddleware,
+  async (req, res) => {
+    try {
+      const course = await Course.findByIdAndUpdate(
+        req.params.id,
+        { status: "rejected" },
+        { new: true }
+      );
+      if (!course) return res.status(404).json({ message: "강의 내역 없음" });
+      res.json({ message: "강의 거절 완료", course });
+    } catch (err) {
+      res.status(500).json({ message: "서버 오류" });
+    }
+  }
+);
