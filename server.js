@@ -8,28 +8,40 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ✅ CORS 설정
-app.use(
-  cors({
-    origin: [
-      "http://localhost:3000",
-      "https://ezkoreav2-production.up.railway.app",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Content-Range", "X-Content-Range"],
-    maxAge: 86400, // 24시간
-  })
-);
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "https://ezkoreav2-production.up.railway.app",
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
-// OPTIONS 요청 처리
-app.options("*", cors());
-
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// ✅ API 라우트
-const apiRouter = express.Router();
+// ✅ MongoDB 연결
+mongoose
+  .connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
+  .then(() => {
+    console.log("✅ MongoDB 연결 성공");
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on port ${PORT}`);
+      console.log(
+        "MongoDB URI:",
+        process.env.MONGO_URI.replace(/:([^:@]{8})[^:@]*@/, ":****@")
+      );
+    });
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB 연결 실패:", err.message);
+    process.exit(1);
+  });
 
 // ✅ User 스키마 정의
 const userSchema = new mongoose.Schema(
@@ -57,19 +69,19 @@ const userSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // createdAt, updatedAt 자동 생성
+    timestamps: true,
   }
 );
 
 const User = mongoose.model("User", userSchema);
 
 // ✅ 기본 라우트
-apiRouter.get("/", (req, res) => {
+app.get("/", (req, res) => {
   res.send("🚀 EZKorea API is running");
 });
 
 // ✅ 회원가입 API
-apiRouter.post("/signup", async (req, res) => {
+app.post("/api/signup", async (req, res) => {
   const { email, password, name, bio } = req.body;
 
   if (!email || !password || !name) {
@@ -77,17 +89,14 @@ apiRouter.post("/signup", async (req, res) => {
   }
 
   try {
-    // 이메일 중복 체크
     const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) {
       return res.status(409).json({ message: "이미 등록된 이메일입니다." });
     }
 
-    // 비밀번호 해싱
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 새 사용자 생성
     const user = new User({
       email: email.toLowerCase(),
       password: hashedPassword,
@@ -97,7 +106,6 @@ apiRouter.post("/signup", async (req, res) => {
 
     await user.save();
 
-    // 응답에서 비밀번호 제외
     const userResponse = user.toObject();
     delete userResponse.password;
 
@@ -117,28 +125,3 @@ apiRouter.post("/signup", async (req, res) => {
     return res.status(500).json({ message: "서버 오류가 발생했습니다." });
   }
 });
-
-// API 라우터를 /api 경로에 마운트
-app.use("/api", apiRouter);
-
-// ✅ MongoDB 연결
-mongoose
-  .connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-  })
-  .then(() => {
-    console.log("✅ MongoDB 연결 성공");
-    // MongoDB 연결 성공 시에만 서버 시작
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-      console.log(
-        "MongoDB URI:",
-        process.env.MONGO_URI.replace(/:([^:@]{8})[^:@]*@/, ":****@")
-      ); // 비밀번호 마스킹
-    });
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB 연결 실패:", err.message);
-    process.exit(1); // MongoDB 연결 실패 시 서버 종료
-  });
