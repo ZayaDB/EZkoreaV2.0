@@ -288,3 +288,51 @@ app.post("/api/apply-instructor", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "서버 오류" });
   }
 });
+
+// ✅ 강사 신청 목록 조회 (pending 상태만)
+app.get("/api/admin/instructor-applications", async (req, res) => {
+  try {
+    const applications = await InstructorApplication.find({
+      status: "pending",
+    }).populate("userId", "email name");
+    res.json(applications);
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// ✅ 강사 신청 승인
+app.post("/api/admin/instructor-applications/:id/approve", async (req, res) => {
+  try {
+    const application = await InstructorApplication.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved" },
+      { new: true }
+    );
+    if (!application)
+      return res.status(404).json({ message: "신청 내역 없음" });
+
+    // 유저 role도 instructor로 변경
+    await User.findByIdAndUpdate(application.userId, { role: "instructor" });
+
+    res.json({ message: "승인 완료", application });
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// ✅ 강사 신청 거절
+app.post("/api/admin/instructor-applications/:id/reject", async (req, res) => {
+  try {
+    const application = await InstructorApplication.findByIdAndUpdate(
+      req.params.id,
+      { status: "rejected" },
+      { new: true }
+    );
+    if (!application)
+      return res.status(404).json({ message: "신청 내역 없음" });
+    res.json({ message: "거절 완료", application });
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
