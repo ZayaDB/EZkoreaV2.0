@@ -336,3 +336,115 @@ app.post("/api/admin/instructor-applications/:id/reject", async (req, res) => {
     res.status(500).json({ message: "서버 오류" });
   }
 });
+
+// ✅ 모든 사용자 목록 조회 (관리자용)
+app.get("/api/admin/users", async (req, res) => {
+  try {
+    const users = await User.find({}, "-password");
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// ✅ 모든 강사 목록 조회 (관리자용)
+app.get("/api/admin/instructors", async (req, res) => {
+  try {
+    const instructors = await User.find({ role: "instructor" }, "-password");
+    res.json(instructors);
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// ✅ 관리자 대시보드 통계 API
+app.get("/api/admin/dashboard", async (req, res) => {
+  try {
+    const userCount = await User.countDocuments();
+    const instructorCount = await User.countDocuments({ role: "instructor" });
+    const pendingInstructorCount = await InstructorApplication.countDocuments({
+      status: "pending",
+    });
+    const courseCount = await Course.countDocuments();
+    const pendingCourseCount = await Course.countDocuments({
+      status: "pending",
+    });
+
+    res.json({
+      userCount,
+      instructorCount,
+      pendingInstructorCount,
+      courseCount,
+      pendingCourseCount,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// ✅ 강의 등록 (승인된 강사만)
+app.post("/api/courses", authMiddleware, async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    // 강사 권한 체크
+    const user = await User.findById(userId);
+    if (!user || user.role !== "instructor") {
+      return res
+        .status(403)
+        .json({ message: "강사만 강의를 등록할 수 있습니다." });
+    }
+    const { title, description } = req.body;
+    const course = await Course.create({
+      instructorId: userId,
+      title,
+      description,
+      status: "pending",
+    });
+    res.json({ message: "강의 등록 완료(승인 대기)", course });
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// ✅ 승인 대기 강의 목록 조회 (관리자용)
+app.get("/api/admin/courses", async (req, res) => {
+  try {
+    const courses = await Course.find({ status: "pending" }).populate(
+      "instructorId",
+      "email name"
+    );
+    res.json(courses);
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// ✅ 강의 승인 (관리자용)
+app.post("/api/admin/courses/:id/approve", async (req, res) => {
+  try {
+    const course = await Course.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved" },
+      { new: true }
+    );
+    if (!course) return res.status(404).json({ message: "강의 내역 없음" });
+    res.json({ message: "강의 승인 완료", course });
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// ✅ 강의 거절 (관리자용)
+app.post("/api/admin/courses/:id/reject", async (req, res) => {
+  try {
+    const course = await Course.findByIdAndUpdate(
+      req.params.id,
+      { status: "rejected" },
+      { new: true }
+    );
+    if (!course) return res.status(404).json({ message: "강의 내역 없음" });
+    res.json({ message: "강의 거절 완료", course });
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
