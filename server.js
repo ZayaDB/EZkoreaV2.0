@@ -14,10 +14,16 @@ app.use(
       "http://localhost:3000",
       "https://ezkoreav2-production.up.railway.app",
     ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Range", "X-Content-Range"],
+    maxAge: 86400, // 24시간
   })
 );
+
+// OPTIONS 요청 처리
+app.options("*", cors());
 
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));

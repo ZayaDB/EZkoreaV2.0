@@ -18,14 +18,14 @@ export default function I18nProvider({
     }
   }, [i18n.isInitialized]);
 
-  if (!mounted) {
-    // Return a minimal loading state that matches the server-rendered content
-    return (
-      <div className="min-h-screen bg-background">
+  // 서버와 클라이언트에서 동일한 초기 렌더링을 보장
+  return (
+    <div className="min-h-screen bg-background">
+      {!mounted ? (
         <div className="h-16 border-b border-secondary bg-background/80" />
-      </div>
-    );
-  }
-
-  return children;
+      ) : (
+        children
+      )}
+    </div>
+  );
 }
