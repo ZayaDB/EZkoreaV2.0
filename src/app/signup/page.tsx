@@ -27,7 +27,7 @@ export default function SignUp() {
 
     try {
       const res = await fetch(
-        "https://ezkoreav2-production.up.railway.app/api/signup",
+        "https://ezkoreav20-production.up.railway.app/api/signup",
         {
           method: "POST",
           headers: {
