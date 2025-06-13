@@ -10,25 +10,18 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
+    const adminToken = localStorage.getItem("adminToken");
 
     // 로그인 페이지가 아닌 경우에만 체크
     if (pathname !== "/admin/login") {
-      if (!userData || !token) {
+      if (!adminToken) {
         router.replace("/admin/login");
         return;
       }
-
-      const parsedUser = JSON.parse(userData);
-      if (parsedUser.role !== "admin") {
-        router.replace("/admin/login");
-        return;
-      }
-      setUser(parsedUser);
+      setIsAdmin(true);
     }
   }, [router, pathname]);
 
@@ -37,7 +30,7 @@ export default function AdminLayout({
     return <>{children}</>;
   }
 
-  if (!user) return null;
+  if (!isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">

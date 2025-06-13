@@ -73,7 +73,12 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["student", "instructor", "pending_instructor"],
+      enum: ["student", "instructor", "pending_instructor", "admin"],
+      default: "student",
+    },
+    activeRole: {
+      type: String,
+      enum: ["student", "instructor"],
       default: "student",
     },
   },
@@ -528,5 +533,39 @@ app.post("/api/courses", authMiddleware, async (req, res) => {
     res.json({ message: "강의 등록 완료(승인 대기)", course });
   } catch (err) {
     res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// 역할 전환 API
+app.post("/api/users/switch-role", authMiddleware, async (req, res) => {
+  const userId = req.user.userId;
+  const { role } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
+
+    // 강사로 승인된 사용자만 역할 전환 가능
+    if (user.role !== "instructor") {
+      return res
+        .status(403)
+        .json({ message: "강사로 승인된 사용자만 역할을 전환할 수 있습니다." });
+    }
+
+    // 강사는 학생 역할로만 전환 가능
+    if (role !== "student" && role !== "instructor") {
+      return res.status(400).json({ message: "잘못된 역할입니다." });
+    }
+
+    // 현재 활성 역할 업데이트
+    user.activeRole = role;
+    await user.save();
+
+    res.json({ message: "역할이 변경되었습니다.", user });
+  } catch (err) {
+    console.error("역할 전환 에러:", err);
+    res.status(500).json({ message: "서버 오류가 발생했습니다." });
   }
 });

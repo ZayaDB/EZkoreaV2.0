@@ -3,11 +3,22 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import Link from "next/link";
+import { API } from "@/config";
+
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  bio?: string;
+}
 
 export default function ProfilePage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [activeRole, setActiveRole] = useState<string>("student");
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -15,8 +26,38 @@ export default function ProfilePage() {
       router.replace("/login");
       return;
     }
-    setUser(JSON.parse(userData));
+    const parsedUser = JSON.parse(userData);
+    setUser(parsedUser);
+    setActiveRole(parsedUser.role || "student");
   }, [router]);
+
+  const handleRoleSwitch = async (newRole: string) => {
+    if (!user) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API.users.switchRole}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      if (!res.ok) {
+        throw new Error("역할 전환에 실패했습니다.");
+      }
+
+      const updatedUser = { ...user, role: newRole };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      setActiveRole(newRole);
+    } catch (error) {
+      console.error("역할 전환 실패:", error);
+      alert("역할 전환에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
 
   if (!user) {
     return (
@@ -30,21 +71,70 @@ export default function ProfilePage() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
         <h1 className="text-2xl font-bold mb-4">{t("profile.profile")}</h1>
-        <div className="mb-4">
-          <div className="font-semibold">
+        <div className="mb-6">
+          <div className="font-semibold mb-2">
             {t("auth.name")}: {user.name}
           </div>
-          <div className="font-semibold">
+          <div className="font-semibold mb-2">
             {t("auth.email")}: {user.email}
           </div>
-          <div className="font-semibold">Role: {user.role || "student"}</div>
+          <div className="font-semibold mb-2">
+            현재 역할: {activeRole === "instructor" ? "강사" : "학생"}
+          </div>
           {user.bio && (
             <div className="mt-2">
               {t("auth.bio")}: {user.bio}
             </div>
           )}
         </div>
-        {/* 추후 프로필 수정, 강사 전환 등 버튼 추가 가능 */}
+
+        {/* 역할 전환 섹션 */}
+        {user.role === "instructor" && (
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <h2 className="text-lg font-semibold mb-3">역할 전환</h2>
+            <div className="flex gap-4">
+              <button
+                onClick={() => handleRoleSwitch("student")}
+                className={`px-4 py-2 rounded-md ${
+                  activeRole === "student"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 dark:bg-gray-600"
+                }`}
+              >
+                학생 모드
+              </button>
+              <button
+                onClick={() => handleRoleSwitch("instructor")}
+                className={`px-4 py-2 rounded-md ${
+                  activeRole === "instructor"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 dark:bg-gray-600"
+                }`}
+              >
+                강사 모드
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 강사 신청 버튼 - 일반 학생이고 아직 신청하지 않은 경우에만 표시 */}
+        {user.role === "student" && (
+          <div className="mt-4">
+            <Link
+              href="/become-instructor"
+              className="inline-block w-full text-center bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              강사 신청하기
+            </Link>
+          </div>
+        )}
+
+        {/* 강사 대기 중인 경우 메시지 표시 */}
+        {user.role === "pending_instructor" && (
+          <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-lg">
+            강사 신청이 검토 중입니다. 승인까지 잠시만 기다려주세요.
+          </div>
+        )}
       </div>
     </div>
   );
@@ -53,7 +143,6 @@ export default function ProfilePage() {
 export function ProfileMain() {
   return (
     <div>
-      {/* 대시보드 메인 컨텐츠: 내 강의실(수강중인 강좌) 등 */}
       <h2 className="text-xl font-bold mb-4">내 강의실</h2>
       <p>
         여기에 수강중인 강좌, 최근 학습 내역, 공지 등 대시보드 메인 컨텐츠를
