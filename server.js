@@ -25,7 +25,7 @@ app.use("/uploads", express.static("uploads"));
 
 // ✅ MongoDB 연결
 mongoose
-  .connect(process.env.MONGO_URI + "/EZKorea", {
+  .connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
   })
@@ -35,8 +35,7 @@ mongoose
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(
         "MongoDB URI:",
-        process.env.MONGO_URI.replace(/:([^:@]{8})[^:@]*@/, ":****@") +
-          "/EZKorea"
+        process.env.MONGO_URI.replace(/:([^:@]{8})[^:@]*@/, ":****@")
       );
     });
   })
