@@ -4,17 +4,38 @@ import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./LanguageSwitcher";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  Bars3Icon,
+  XMarkIcon,
+  UserCircleIcon,
+} from "@heroicons/react/24/outline";
 import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
+    // 로컬 스토리지에서 사용자 정보 확인
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
+    if (token && userData) {
+      setIsLoggedIn(true);
+      setUser(JSON.parse(userData));
+    }
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUser(null);
+    window.location.href = "/";
+  };
 
   if (!mounted) {
     return (
@@ -75,9 +96,31 @@ export default function Header() {
           <div className="flex items-center gap-x-4">
             <ThemeToggle />
             <LanguageSwitcher />
-            <Link href="/login" className="btn-primary text-sm">
-              {t("nav.login")}
-            </Link>
+            {isLoggedIn ? (
+              <div className="relative group">
+                <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  <UserCircleIcon className="h-6 w-6 text-foreground" />
+                </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden group-hover:block">
+                  <Link
+                    href="/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    {t("nav.profile")}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    {t("nav.logout")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Link href="/login" className="btn-primary text-sm">
+                {t("nav.login")}
+              </Link>
+            )}
           </div>
         </div>
       </nav>
@@ -112,13 +155,34 @@ export default function Header() {
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-            <Link
-              href="/login"
-              className="block w-full btn-primary text-center mb-4"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t("nav.login")}
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link
+                  href="/profile"
+                  className="block py-2 text-base font-semibold hover:text-primary transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {t("nav.profile")}
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left py-2 text-base font-semibold hover:text-primary transition-colors"
+                >
+                  {t("nav.logout")}
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="block w-full btn-primary text-center mb-4"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {t("nav.login")}
+              </Link>
+            )}
             <div className="flex items-center justify-between">
               <ThemeToggle />
               <LanguageSwitcher />
