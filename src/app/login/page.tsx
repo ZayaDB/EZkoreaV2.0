@@ -42,6 +42,7 @@ export default function Login() {
       // 토큰 저장
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      window.dispatchEvent(new Event("storage"));
 
       alert("로그인 성공!");
       router.push("/"); // 홈페이지로 이동
@@ -71,7 +72,7 @@ export default function Login() {
             {t("auth.login")}
           </h2>
           <p className="mt-2 text-sm text-secondary-foreground">
-            {t("auth.noAccount")}{" "}
+            {t("auth.haventAccount")}{" "}
             <Link
               href="/signup"
               className="font-medium text-primary hover:text-primary/90"

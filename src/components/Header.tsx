@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./LanguageSwitcher";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Bars3Icon,
   XMarkIcon,
@@ -17,17 +17,42 @@ export default function Header() {
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
-    // 로컬 스토리지에서 사용자 정보 확인
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-    if (token && userData) {
-      setIsLoggedIn(true);
-      setUser(JSON.parse(userData));
-    }
+    const checkLogin = () => {
+      const token = localStorage.getItem("token");
+      const userData = localStorage.getItem("user");
+      if (token && userData) {
+        setIsLoggedIn(true);
+        setUser(JSON.parse(userData));
+      } else {
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    };
+
+    checkLogin();
+    window.addEventListener("storage", checkLogin);
+    return () => window.removeEventListener("storage", checkLogin);
   }, []);
+
+  // 드롭다운 외부 클릭 시 닫힘
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [dropdownOpen]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -96,25 +121,43 @@ export default function Header() {
           <div className="flex items-center gap-x-4">
             <ThemeToggle />
             <LanguageSwitcher />
+            {isLoggedIn && (
+              <Link href="/become-instructor" className="btn-secondary">
+                {t("nav.becomeInstructor")}
+              </Link>
+            )}
             {isLoggedIn ? (
-              <div className="relative group">
-                <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                  tabIndex={0}
+                >
                   <UserCircleIcon className="h-6 w-6 text-foreground" />
                 </button>
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden group-hover:block">
-                  <Link
-                    href="/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                {dropdownOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50"
+                    tabIndex={-1}
                   >
-                    {t("nav.profile")}
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    {t("nav.logout")}
-                  </button>
-                </div>
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      {t("profile.profile")}
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setDropdownOpen(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {t("profile.logout")}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Link href="/login" className="btn-primary text-sm">
@@ -162,7 +205,7 @@ export default function Header() {
                   className="block py-2 text-base font-semibold hover:text-primary transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  {t("nav.profile")}
+                  {t("profile.profile")}
                 </Link>
                 <button
                   onClick={() => {
@@ -171,7 +214,7 @@ export default function Header() {
                   }}
                   className="block w-full text-left py-2 text-base font-semibold hover:text-primary transition-colors"
                 >
-                  {t("nav.logout")}
+                  {t("profile.logout")}
                 </button>
               </>
             ) : (

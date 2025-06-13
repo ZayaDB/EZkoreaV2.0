@@ -5,7 +5,14 @@
     "about": "About",
     "contact": "Contact",
     "login": "Login",
-    "myCourses": "My Courses"
+    "myCourses": "My Courses",
+    "becomeInstructor": "Become Instructor",
+    "logout": "Logout",
+    "payments": "Payments",
+    "qna": "Q&A",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "favorites": "Favorites"
   },
   "auth": {
     "createAccount": "Create Account",
@@ -18,8 +25,14 @@
     "bio": "Bio",
     "signUp": "Sign Up",
     "loginButton": "Login",
-    "forgotPassword": "Forgot your password?"
+    "forgotPassword": "Forgot your password?",
+    "haventAccount": "Don't have an account?"
   },
+  "profile": {
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+
   "common": {
     "optional": "Optional",
     "required": "Required",

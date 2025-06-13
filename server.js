@@ -71,6 +71,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    role: {
+      type: String,
+      enum: ["student", "instructor", "pending_instructor"],
+      default: "student",
+    },
   },
   {
     timestamps: true,
@@ -78,6 +83,42 @@ const userSchema = new mongoose.Schema(
 );
 
 const User = mongoose.model("User", userSchema);
+
+// 강사 신청 모델
+const instructorApplicationSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  intro: String,
+  career: String,
+  certificate: String,
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+  createdAt: { type: Date, default: Date.now },
+});
+const InstructorApplication = mongoose.model(
+  "InstructorApplication",
+  instructorApplicationSchema
+);
+
+// 강의 모델
+const courseSchema = new mongoose.Schema({
+  instructorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  title: String,
+  description: String,
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+  createdAt: { type: Date, default: Date.now },
+});
+const Course = mongoose.model("Course", courseSchema);
 
 // ✅ 기본 라우트
 app.get("/", (req, res) => {
@@ -180,5 +221,70 @@ app.post("/api/login", async (req, res) => {
   } catch (err) {
     console.error("❌ 로그인 에러:", err);
     return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+  }
+});
+
+// 인증 미들웨어
+function authMiddleware(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "인증이 필요합니다." });
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "your_super_secret_key"
+    );
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "유효하지 않은 토큰입니다." });
+  }
+}
+
+// Become Instructor API
+app.post("/api/become-instructor", authMiddleware, async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { role: "instructor" },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
+    res.json({ message: "강사로 전환되었습니다.", user });
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
+// 강사 신청 API
+app.post("/api/apply-instructor", authMiddleware, async (req, res) => {
+  const userId = req.user.userId;
+  const { intro, career, certificate } = req.body;
+  try {
+    // 이미 신청한 경우 중복 방지
+    const existing = await InstructorApplication.findOne({
+      userId,
+      status: "pending",
+    });
+    if (existing) {
+      return res.status(400).json({ message: "이미 신청 내역이 있습니다." });
+    }
+    const application = await InstructorApplication.create({
+      userId,
+      intro,
+      career,
+      certificate,
+    });
+    // User role을 pending_instructor로 변경
+    await User.findByIdAndUpdate(userId, { role: "pending_instructor" });
+    const user = await User.findById(userId);
+    res.json({ message: "신청 완료", application, user });
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
   }
 });

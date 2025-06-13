@@ -5,7 +5,14 @@
     "about": "소개",
     "contact": "문의하기",
     "login": "로그인",
-    "myCourses": "내 강의실"
+    "myCourses": "내 강의실",
+    "becomeInstructor": "강사되기",
+    "logout": "로그아웃",
+    "payments": "결제내역",
+    "qna": "질문답변",
+    "notifications": "알림",
+    "settings": "설정",
+    "favorites": "좋아요"
   },
   "auth": {
     "createAccount": "회원가입",
@@ -18,7 +25,18 @@
     "bio": "자기소개",
     "signUp": "가입하기",
     "loginButton": "로그인",
-    "forgotPassword": "비밀번호를 잊으셨나요?"
+    "forgotPassword": "비밀번호를 잊으셨나요?",
+    "haventAccount": "계정이 없으신가요?"
+  },
+  "profile": {
+    "profile": "프로필",
+    "logout": "로그아웃",
+    "myCourses": "내 강의실",
+    "favorites": "좋아요",
+    "payments": "결제내역",
+    "qna": "질문답변",
+    "notifications": "알림",
+    "settings": "설정"
   },
   "common": {
     "optional": "선택사항",
