@@ -28,27 +28,8 @@ app.options("*", cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// ✅ MongoDB 연결
-mongoose
-  .connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-  })
-  .then(() => {
-    console.log("✅ MongoDB 연결 성공");
-    // MongoDB 연결 성공 시에만 서버 시작
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-      console.log(
-        "MongoDB URI:",
-        process.env.MONGO_URI.replace(/:([^:@]{8})[^:@]*@/, ":****@")
-      ); // 비밀번호 마스킹
-    });
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB 연결 실패:", err.message);
-    process.exit(1); // MongoDB 연결 실패 시 서버 종료
-  });
+// ✅ API 라우트
+const apiRouter = express.Router();
 
 // ✅ User 스키마 정의
 const userSchema = new mongoose.Schema(
@@ -83,12 +64,12 @@ const userSchema = new mongoose.Schema(
 const User = mongoose.model("User", userSchema);
 
 // ✅ 기본 라우트
-app.get("/", (req, res) => {
+apiRouter.get("/", (req, res) => {
   res.send("🚀 EZKorea API is running");
 });
 
 // ✅ 회원가입 API
-app.post("/api/signup", async (req, res) => {
+apiRouter.post("/signup", async (req, res) => {
   const { email, password, name, bio } = req.body;
 
   if (!email || !password || !name) {
@@ -136,3 +117,28 @@ app.post("/api/signup", async (req, res) => {
     return res.status(500).json({ message: "서버 오류가 발생했습니다." });
   }
 });
+
+// API 라우터를 /api 경로에 마운트
+app.use("/api", apiRouter);
+
+// ✅ MongoDB 연결
+mongoose
+  .connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
+  .then(() => {
+    console.log("✅ MongoDB 연결 성공");
+    // MongoDB 연결 성공 시에만 서버 시작
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on port ${PORT}`);
+      console.log(
+        "MongoDB URI:",
+        process.env.MONGO_URI.replace(/:([^:@]{8})[^:@]*@/, ":****@")
+      ); // 비밀번호 마스킹
+    });
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB 연결 실패:", err.message);
+    process.exit(1); // MongoDB 연결 실패 시 서버 종료
+  });
